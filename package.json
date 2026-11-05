@@ -1,10 +1,13 @@
 {
   "name": "travelmore",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "type": "module",
-  "workspaces": ["client", "server"],
+  "workspaces": [
+    "client",
+    "server"
+  ],
   "scripts": {
     "dev": "node dev.mjs",
     "dev:server": "npm --workspace server run dev",

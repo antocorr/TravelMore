@@ -240,7 +240,20 @@ try {
   assert.equal(flights.search.status, 'unavailable'); assert.equal(flights.results.length, 0); assert.equal(flights.search.sources.length, 2);
   const candidate = await travel.saveFlightCandidate({ searchId: flights.search.id, origin: 'CTA', destination: 'SZX', provider: 'Skyscanner API', sourceUrl: 'https://example.com/quote/1', provenance: 'licensed API quote #1', fetchedAt: '2026-01-01T00:00:00.000Z', price: 600, currency: 'EUR' });
   assert.equal(candidate.candidate.status, 'observed');
-  const js = await executeJs({ code: 'return input.values.map(value => value * 2)', input: { values: [2, 3] } }); assert.deepEqual(js, { result: [4, 6] });
+  // execute_js is off unless the operator enables it, and even then it must not reach the host realm:
+  // a host object in the sandbox let `input.constructor.constructor('return process')()` recover the
+  // child process, and Node's permission model does not cover networking, so outbound HTTP worked.
+  delete process.env.TRAVELMORE_AGENT_EXECUTE_JS;
+  await assert.rejects(() => executeJs({ code: 'return 1' }), /disabled/, 'The JavaScript tool stays off by default');
+  process.env.TRAVELMORE_AGENT_EXECUTE_JS = '1';
+  try {
+    const js = await executeJs({ code: 'return input.values.map(value => value * 2)', input: { values: [2, 3] } }); assert.deepEqual(js, { result: [4, 6] });
+    const escape: any = await executeJs({ code: `try { return String(input.constructor.constructor('return typeof process')()) } catch (error) { return 'blocked:' + error.name }`, input: { a: 1 } });
+    assert.equal(escape.result, 'blocked:EvalError', 'String code generation is disabled inside the sandbox');
+    const noNetwork: any = await executeJs({ code: `return typeof fetch` });
+    assert.equal(noNetwork.result, 'undefined', 'No network API is exposed to the sandbox');
+    await assert.rejects(() => executeJs({ code: 'while (true) {}' }), /timed out/i, 'An endless loop is stopped');
+  } finally { delete process.env.TRAVELMORE_AGENT_EXECUTE_JS; }
   const searchText = 'Title: Fujian Tulou - UNESCO\nURL: https://whc.unesco.org/en/list/1113/\nHighlights:\nWorld Heritage earthen houses.\n---\nTitle: Unsafe\nURL: http://internal.example/result\nHighlights:\nDiscard me.';
   const searchEnvelope = `event: message\ndata: ${JSON.stringify({ result: { content: [{ type: 'text', text: searchText }] } })}\n\n`;
   const exa = await searchExa('Fujian Tulou', 3, (async (url, init) => {

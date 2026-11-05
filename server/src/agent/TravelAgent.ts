@@ -4,6 +4,7 @@ import { InMemoryCredentialStore } from '@earendil-works/pi-ai';
 import { OPENAI_CODEX_API, openAICodexModel, openAICodexRuntime } from './OpenAICodex.js';
 import { TravelAgentTools } from './travelTools.js';
 import { devIntercomTool, type DevIntercomConfig } from './devIntercom.js';
+import { executeJsEnabled } from '../services/tools.js';
 import { TravelService } from '../services/travel.js';
 import type { AgentSettings, TravelProviderStorage } from '../services/providers.js';
 
@@ -61,7 +62,7 @@ export class TravelAgent {
       runtime = await ModelRuntime.create({ credentials: new InMemoryCredentialStore(), modelsPath: null, refreshOnCreate: false });
       runtime.registerProvider(model.provider, { api, baseUrl: connection.baseUrl, apiKey: connection.apiKey, authHeader: true, models: [model] });
     }
-    const tools = new TravelAgentTools(this.travel, this.workspace() ? undefined : this.scope), customTools: any[] = tools.definitions.map(definition => ({ ...definition, label: definition.name, executionMode: 'sequential', parameters: definition.parameters as any, execute: async (_id: string, input: any) => { try { const result: any = await tools.execute(definition.name, input); if (typeof result?.revision === 'number') this.onMutation?.(result.revision); return { content: [{ type: 'text', text: JSON.stringify(result) }], details: result }; } catch (error: any) { return { content: [{ type: 'text', text: `Tool error: ${error.message}` }], details: { error: error.message }, isError: true }; } } }));
+    const tools = new TravelAgentTools(this.travel, this.workspace() ? undefined : this.scope), customTools: any[] = tools.definitions.filter(definition => definition.name !== 'execute_js' || executeJsEnabled()).map(definition => ({ ...definition, label: definition.name, executionMode: 'sequential', parameters: definition.parameters as any, execute: async (_id: string, input: any) => { try { const result: any = await tools.execute(definition.name, input); if (typeof result?.revision === 'number') this.onMutation?.(result.revision); return { content: [{ type: 'text', text: JSON.stringify(result) }], details: result }; } catch (error: any) { return { content: [{ type: 'text', text: `Tool error: ${error.message}` }], details: { error: error.message }, isError: true }; } } }));
     if (this.devIntercom) customTools.push(devIntercomTool(this.devIntercom, this.scope, cwd, this.intercomLifetime.signal));
     const resourceLoader: any = { getExtensions: () => ({ extensions: [], errors: [], runtime: createExtensionRuntime() }), getSkills: () => ({ skills: [], diagnostics: [] }), getPrompts: () => ({ prompts: [], diagnostics: [] }), getThemes: () => ({ themes: [], diagnostics: [] }), getAgentsFiles: () => ({ agentsFiles: [] }), getSystemPrompt: () => this.systemPrompt(), getSystemPromptSource: () => undefined, getAppendSystemPrompt: () => [], getAppendSystemPromptSources: () => [], extendResources: () => {}, reload: async () => {} };
     const result = await createAgentSession({ cwd, agentDir: cwd, model, modelRuntime: runtime, thinkingLevel: (connection.thinking || 'off') as any, noTools: 'all', tools: customTools.map(tool => tool.name), customTools, resourceLoader, sessionManager: SessionManager.inMemory(cwd), settingsManager: SettingsManager.inMemory({ retry: { enabled: false } }) });

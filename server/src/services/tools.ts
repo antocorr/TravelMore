@@ -97,16 +97,34 @@ export async function publicJson(raw: string, options: PublicReadOptions = {}) {
   try { return { url: response.url, status: response.status, body: JSON.parse(new TextDecoder().decode(response.body)) }; } catch { throw new Error('Response was not valid JSON.'); }
 }
 export async function readWeb(input: any) { const response = await publicRead(input?.url); const raw = new TextDecoder().decode(response.body), text = raw.replace(/<script\b[^>]*>[\s\S]*?<\/script>|<style\b[^>]*>[\s\S]*?<\/style>|<[^>]+>/gi, ' ').replace(/\s+/g, ' ').trim().slice(0, 32_000); return { url: response.url, status: response.status, fetchedAt: new Date().toISOString(), text }; }
-const runner = String.raw`import vm from 'node:vm'; const request = JSON.parse(Buffer.from(process.argv[1], 'base64url').toString()); const sandbox = Object.create(null); sandbox.input = JSON.parse(JSON.stringify(request.input ?? null)); const script = new vm.Script('(async () => { "use strict"; ' + request.code + '\n})()', { filename: 'travelmore-execute-js.js' }); Promise.resolve(script.runInNewContext(sandbox, { timeout: 750 })).then(output => process.stdout.write(JSON.stringify({ result: output === undefined ? null : output })), error => { process.stderr.write(String(error?.stack || error)); process.exitCode = 1; });`;
+const runner = String.raw`import vm from 'node:vm';
+const request = JSON.parse(Buffer.from(process.argv[1], 'base64url').toString());
+// No host object ever crosses into the context: the input is re-parsed inside the realm and string
+// code generation is disabled, so a value such as input.constructor.constructor has nothing to reach.
+// Without both measures the child could recover its own realm and, since Node's permission model
+// does not cover networking, make outbound HTTP requests.
+const context = vm.createContext(Object.create(null), { codeGeneration: { strings: false, wasm: false } });
+const source = '(async () => { "use strict"; const input = JSON.parse(' + JSON.stringify(JSON.stringify(request.input ?? null)) + ');\n' + request.code + '\n})()';
+const script = new vm.Script(source, { filename: 'travelmore-execute-js.js' });
+try {
+  const output = await script.runInContext(context, { timeout: 750 });
+  process.stdout.write(JSON.stringify({ result: output === undefined ? null : output }));
+} catch (error) {
+  process.stderr.write(String(error && error.message ? error.message : error));
+  process.exitCode = 1;
+}`;
+/** Off unless the operator opts in: the tool is a convenience, not a requirement for planning. */
+export function executeJsEnabled() { return process.env.TRAVELMORE_AGENT_EXECUTE_JS === '1'; }
 /** Pure computation in a permission-restricted child process. CRUD uses explicit typed agent tools, never host FS. */
 export async function executeJs(input: any) {
+  if (!executeJsEnabled()) throw new Error('execute_js is disabled on this server. Set TRAVELMORE_AGENT_EXECUTE_JS=1 to enable the sandboxed JavaScript tool, or compute the value with the typed tools.');
   if (typeof input?.code !== 'string' || !input.code.trim() || input.code.length > 8_000) throw new Error('execute_js accepts 1–8000 characters of JavaScript.');
   const payload = JSON.stringify({ code: input.code, input: input.input ?? null }); if (Buffer.byteLength(payload, 'utf8') > 64 * 1024) throw new Error('execute_js input exceeds 64KB.');
   return new Promise((resolve, reject) => {
     const encoded = Buffer.from(payload).toString('base64url'); const child = spawn(process.execPath, ['--experimental-permission', '--disable-warning=ExperimentalWarning', '--input-type=module', '--eval', runner, encoded], { stdio: ['ignore', 'pipe', 'pipe'], env: {} }); let stdout = '', stderr = '', done = false;
     const finish = (error?: Error, result?: unknown) => { if (done) return; done = true; clearTimeout(timer); error ? reject(error) : resolve(result); };
     const timer = setTimeout(() => { child.kill('SIGKILL'); finish(new Error('execute_js timed out.')); }, 1_500);
-    child.stdout.on('data', chunk => { stdout += chunk; if (Buffer.byteLength(stdout) > 128 * 1024) { child.kill('SIGKILL'); finish(new Error('execute_js result exceeds 64KB.')); } }); child.stderr.on('data', chunk => { stderr += chunk; if (Buffer.byteLength(stderr) > 16 * 1024) { child.kill('SIGKILL'); finish(new Error('execute_js failed.')); } }); child.once('error', error => finish(error)); child.once('close', code => { if (code !== 0) return finish(new Error(`execute_js failed: ${stderr.slice(0, 500) || code}`)); try { const result = JSON.parse(stdout); if (Buffer.byteLength(JSON.stringify(result), 'utf8') > 64 * 1024) throw new Error('execute_js result exceeds 64KB.'); finish(undefined, result); } catch (error: any) { finish(error); } });
+    child.stdout.on('data', chunk => { stdout += chunk; if (Buffer.byteLength(stdout) > 128 * 1024) { child.kill('SIGKILL'); finish(new Error('execute_js result exceeds 64KB.')); } }); child.stderr.on('data', chunk => { stderr += chunk; if (Buffer.byteLength(stderr) > 16 * 1024) { child.kill('SIGKILL'); finish(new Error('execute_js failed.')); } }); child.once('error', error => finish(error)); child.once('close', code => { if (code !== 0) return finish(new Error(/timed out/i.test(stderr) ? 'execute_js timed out after 750 ms.' : `execute_js failed: ${stderr.slice(0, 500) || code}`)); try { const result = JSON.parse(stdout); if (Buffer.byteLength(JSON.stringify(result), 'utf8') > 64 * 1024) throw new Error('execute_js result exceeds 64KB.'); finish(undefined, result); } catch (error: any) { finish(error); } });
 
   });
 }

@@ -229,6 +229,7 @@ For a consistent backup, stop the server and copy the complete data directory. N
 | `TRAVELMORE_CHROME_DEBUG_URL` | Explicit opt-in to an existing debug browser; use loopback only |
 | `TRAVELMORE_FLIGHTS_DEBUG=1` | Logs flight-reader samples |
 | `TRAVELMORE_SKYSCANNER_PROFILE` | Direct adapter fallback; the monitor's explicit profile takes precedence |
+| `TRAVELMORE_AGENT_EXECUTE_JS=1` | Enables the optional sandboxed `execute_js` tool for the agent (off by default) |
 | `TRAVELMORE_DEV_INTERCOM=1` | Enables the optional development-only intercom capability |
 | `TRAVELMORE_INTERCOM_TARGET` | Full fixed recipient Pi session ID |
 | `TRAVELMORE_INTERCOM_CLI` | Absolute path to the official pi-intercom CLI |
@@ -249,6 +250,29 @@ The default origin policy allows HTTP loopback/private origins, local IPv6, `.lo
 names, and Tailscale's `100.64.0.0/10` range. Public origins are rejected. Use
 `TRAVELMORE_ALLOWED_ORIGINS` for an explicit allowlist, including HTTPS behind a trusted proxy.
 **There is no login: only expose the app on networks you trust.**
+
+### Sandboxed JavaScript tool
+
+`execute_js` is **off by default**; set `TRAVELMORE_AGENT_EXECUTE_JS=1` to expose it to the agent and
+the RPC layer. When disabled, neither the RPC method nor the agent tool is advertised, and a forced
+call fails with an actionable error.
+
+When enabled, the code runs in a separate Node process started with `--experimental-permission`
+(no filesystem or child-process access, empty environment) inside a V8 context that cannot run
+generated code and never receives a host object. What that means in practice, measured on Node 22:
+
+| Attempt from inside the tool | Result |
+|---|---|
+| `fetch('http://127.0.0.1:…')` | `ReferenceError`: no network API |
+| `input.constructor.constructor('return process')()` | `EvalError`: string code generation disabled |
+| `fs.readFileSync('/etc/hosts')` | `ERR_ACCESS_DENIED` from the permission model |
+| `while (true) {}` | stopped after 750 ms with a timeout error |
+
+The earlier version passed the input object into the sandbox directly, which let the code recover the
+child process and make outbound HTTP requests even though the filesystem stayed blocked; the input is
+now parsed inside the context. Limits remain: 8,000 characters of code, 64 KB input and result, 128 KB
+stdout, 750 ms execution, 1.5 s process lifetime. Treat it as a convenience for arithmetic and data
+reshaping, not as a general-purpose runtime, and leave it disabled if you do not need it.
 
 ### Developer intercom
 
@@ -282,6 +306,7 @@ advice does not grant permission to change code or expand the agent's tools.
 - **One process per archive.** Serialized writes are not a lock between independent backends.
 - **Sources can fail.** Nominatim is paced at 1.1 seconds between requests with caching and backoff.
   Wikipedia and flight sites can become unavailable or change their structure.
+- **`execute_js` is opt-in.** Disabled unless `TRAVELMORE_AGENT_EXECUTE_JS=1`; see [the sandbox notes](#sandboxed-javascript-tool).
 - **Review AI output.** Sources and guardrails reduce errors; they do not make suggestions infallible.
   Use the UI/RPC for flight monitoring: some declared agent flight tools are still incomplete.
 - **Intercom is opt-in.** Off by default; development and localhost only, with a fixed server-side

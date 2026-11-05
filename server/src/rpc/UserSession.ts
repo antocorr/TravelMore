@@ -2,7 +2,7 @@ import { RpcAbleReceiver, RpcAbleSender, destroy, dispatch, type RpcEnvelope } f
 import type { WebSocket } from 'ws';
 import { randomUUID } from 'node:crypto';
 import { TravelService } from '../services/travel.js';
-import { executeJs, readWeb, searchWeb } from '../services/tools.js';
+import { executeJs, executeJsEnabled, readWeb, searchWeb } from '../services/tools.js';
 import { TravelAgent } from '../agent/TravelAgent.js';
 import type { DevIntercomConfig } from '../agent/devIntercom.js';
 import { MediaStore } from '../services/media.js';
@@ -162,7 +162,7 @@ export class UserSession {
   }
   private scopeOf(input: any) { const scope = input?.scope ?? input?.tripId; if (scope !== 'workspace') this.travel.getTripTree({ tripId: scope }); return scope as string; }
   private chatScope(input: any) { return this.scopeOf(input) }
-  async statusFor(scope: string) { const configured = await providerConfigured(this.storage(), scope), run = UserSession.runs.get(scope); return { state: !configured ? 'unconfigured' : run ? 'running' : 'idle', tools: ['trip_tree', 'node_detail', 'trip_crud', 'todo_crud', 'image_attach', 'place_search', 'flight_search', 'web_search', 'web_read', 'execute_js', ...(this.devIntercom ? ['dev_intercom'] : [])], running: !!run }; }
+  async statusFor(scope: string) { const configured = await providerConfigured(this.storage(), scope), run = UserSession.runs.get(scope); return { state: !configured ? 'unconfigured' : run ? 'running' : 'idle', tools: ['trip_tree', 'node_detail', 'trip_crud', 'todo_crud', 'image_attach', 'place_search', 'flight_search', 'web_search', 'web_read', ...(executeJsEnabled() ? ['execute_js'] : []), ...(this.devIntercom ? ['dev_intercom'] : [])], running: !!run }; }
   getAgentStatus(input: any) { return this.statusFor(this.scopeOf(input)); }
   async getChat(input: any) { const scope = this.chatScope(input), data = this.travel.store.snapshot(); return { entries: data.chats.filter(entry => (entry.scope || entry.tripId) === scope), state: await this.statusFor(scope) }; }
   private static publishChat(payload: any) { for (const peer of UserSession.peers) if (!peer.closed) peer.client.chatUpdated(payload); }

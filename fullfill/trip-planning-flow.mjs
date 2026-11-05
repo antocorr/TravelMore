@@ -13,7 +13,7 @@ const root = fileURLToPath(new URL('../', import.meta.url))
 const dataDir = await mkdtemp(join(tmpdir(), 'travelmore-fullfill-'))
 const server = spawn(process.execPath, [fileURLToPath(import.meta.resolve('tsx/cli')), 'src/index.ts'], {
     cwd: join(root, 'server'),
-    env: { ...process.env, TRAVELMORE_DATA_DIR: dataDir, TRAVELMORE_GEOCODER_URL: 'off', TRAVELMORE_SEARCH_PROVIDER: 'off', PORT: '0', HOST: '127.0.0.1' },
+    env: { ...process.env, TRAVELMORE_DATA_DIR: dataDir, TRAVELMORE_GEOCODER_URL: 'off', TRAVELMORE_SEARCH_PROVIDER: 'off', TRAVELMORE_AGENT_EXECUTE_JS: '1', PORT: '0', HOST: '127.0.0.1' },
     stdio: ['ignore', 'pipe', 'pipe'],
 })
 let output = ''
