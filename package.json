@@ -1,0 +1,21 @@
+{
+  "name": "travelmore",
+  "private": true,
+  "version": "0.1.0",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": ["client", "server"],
+  "scripts": {
+    "dev": "node dev.mjs",
+    "dev:server": "npm --workspace server run dev",
+    "dev:client": "npm --workspace client run dev",
+    "build": "npm --workspace server run build && npm --workspace client run build",
+    "typecheck": "npm --workspace server run typecheck",
+    "test": "npm --workspace server run test && node fullfill/trip-planning-flow.mjs",
+    "test:agent": "npm --workspace server run test:agent",
+    "test:intercom": "node --import tsx fullfill/dev-intercom-flow.mts"
+  },
+  "overrides": {
+    "undici": "8.12.2"
+  }
+}

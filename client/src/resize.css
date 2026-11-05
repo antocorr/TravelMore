@@ -1,0 +1,14 @@
+/* Desktop workspace splitters: broad invisible hit areas, narrow visible rules. */
+.workspace-resize-handle { position:absolute; z-index:25; display:block; padding:0; border:0; background:transparent; touch-action:none; }
+.workspace-resize-handle::after { content:''; position:absolute; background:#dce1da; transition:opacity .14s,background .14s; opacity:0; }
+.workspace:hover .workspace-resize-handle::after, .workspace-resize-handle:hover::after, .workspace-resize-handle:focus-visible::after, .workspace-resize-handle.dragging::after { opacity:1; }
+.workspace-resize-handle:focus-visible { outline:2px solid #315c51; outline-offset:-2px; }
+.workspace-resize-handle.dragging::after { background:#d66c47; }
+.resize-vertical { top:0; bottom:0; width:10px; margin-left:-5px; cursor:col-resize; }
+.resize-vertical::after { top:0; bottom:0; left:4px; width:1px; }
+.resize-horizontal { left:0; right:0; height:10px; margin-top:-5px; cursor:row-resize; }
+.resize-horizontal::after { top:4px; left:0; right:0; height:1px; }
+.main-column { position:relative; }
+body.workspace-resizing { user-select:none; cursor:grabbing; }
+body.workspace-resizing * { cursor:inherit !important; }
+@media (max-width:879px) { .workspace-resize-handle { display:none !important; } }

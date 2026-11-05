@@ -1,0 +1,61 @@
+# Dependencies and generated builds
+node_modules/
+client/dist/
+server/dist/
+
+# Local environment and package-manager credentials
+.env
+.env.*
+!.env.example
+.npmrc
+.netrc
+
+# Private runtime data, if a local data directory is placed inside the checkout
+/.travelmore/
+/data/
+/.private/
+/private-assets/
+travelmore.json
+travelmore.json.*.tmp
+providers.json
+providers.json.tmp
+model-catalog.json
+openai-device.json
+auth.json
+credentials.json
+cookies.json
+storage-state*.json
+browser-profile/
+skyscanner-profile/
+agent-workspaces/
+/media/
+
+# Private keys and copied credential directories
+*.pem
+*.key
+*.p12
+*.pfx
+.aws/
+.ssh/
+
+# Browser/session diagnostics can include cookies, tokens and private page content
+.pi/
+.agent-browser/
+.playwright/
+*.har
+*.trace
+trace*.zip
+
+# Ad-hoc root screenshots are private; curated docs/screenshots remain publishable
+/Screenshot*.png
+/Screenshot*.jpg
+/Screenshot*.jpeg
+/Screenshot*.webp
+
+# Local documentation and design notes stay private; curated screenshots live in /screenshots
+/docs/
+/server/RPC_CONTRACT*.md
+
+# OS metadata and logs
+.DS_Store
+*.log

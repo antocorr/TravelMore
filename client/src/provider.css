@@ -1,0 +1,63 @@
+/* Provider manager: connections on the left, one connection + its model on the right. */
+.provider-sheet { width: min(940px, calc(100vw - 32px)); max-height: min(92dvh, 780px); overflow: auto; padding: 24px; border: 1px solid #d9e1db; border-radius: 15px; background: #fffefa; box-shadow: 0 25px 75px #10241a30; }
+.provider-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.provider-head h2 { margin: 5px 0 0; color: #2c4038; font: 27px Iowan Old Style, Georgia, serif; font-weight: 500; }
+.provider-sub { margin: 7px 0 0; max-width: 46ch; color: #818d86; font-size: 11px; line-height: 1.55; }
+.provider-layout { display: grid; grid-template-columns: 236px minmax(0, 1fr); gap: 22px; align-items: start; }
+
+.provider-list { min-width: 0; padding-right: 18px; border-right: 1px solid #e4e9e2; }
+.provider-list-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding-bottom: 8px; }
+.provider-count { color: #aab3ae; font-size: 10px; }
+.provider-choice { display: flex; align-items: stretch; gap: 2px; margin-bottom: 4px; border: 1px solid transparent; border-radius: 9px; }
+.provider-choice:hover { background: #f2f6f1; }
+.provider-choice.active { border-color: #c9d9cf; background: #e9f1ea; }
+.provider-choice-main { flex: 1; min-width: 0; padding: 9px 10px; text-align: left; }
+.provider-choice-main strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #2e4038; font-size: 12px; font-weight: 650; }
+.provider-choice-main small { display: block; margin-top: 2px; color: #8a958f; font-size: 9px; }
+.provider-delete { flex: 0 0 auto; width: 26px; color: #b0bab4; font-size: 16px; line-height: 1; border-radius: 7px; }
+.provider-delete:hover { color: #b34e31; background: #fae3da; }
+.provider-empty { margin: 10px 2px; color: #9aa49f; font-size: 10px; line-height: 1.5; }
+.provider-add { width: 100%; margin-top: 8px; padding: 9px 10px; color: #315c51; border: 1px dashed #a9beb4; border-radius: 8px; font-size: 11px; font-weight: 650; }
+.provider-add:hover { background: #eef4ef; border-style: solid; }
+.provider-scope { margin-top: 18px; padding-top: 14px; border-top: 1px solid #e4e9e2; }
+.provider-scope .provider-hint { margin: 7px 0 6px; }
+.provider-scope .text-danger { font-size: 10px; }
+
+.provider-form { min-width: 0; }
+.provider-form h3 { margin: 0 0 4px; color: #33463e; font: 20px Iowan Old Style, Georgia, serif; font-weight: 500; }
+.provider-form h4 { margin: 0 0 8px; color: #41544c; font: 17px Iowan Old Style, Georgia, serif; font-weight: 500; }
+.provider-form label { display: block; margin: 9px 0; color: #738078; font-size: 10px; font-weight: 700; }
+.provider-form input, .provider-form select { width: 100%; margin-top: 4px; padding: 8px 10px; font-size: 12px; font-weight: 400; }
+.provider-grid, .model-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.provider-check { display: flex; align-items: center; gap: 8px; color: #55655d; font-size: 11px; font-weight: 500; }
+.provider-check input { width: 14px; height: 14px; margin: 0; accent-color: #315c51; }
+.provider-custom { margin: 4px 0 6px; padding: 10px 12px; border: 1px dashed #d3ddd6; border-radius: 9px; background: #fafbf6; }
+.provider-custom label { margin: 8px 0; }
+.provider-form-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.provider-retry { margin-top: 8px; padding: 7px 10px; font-size: 10px; }
+.provider-form-actions .button-primary { padding: 10px 14px; }
+.provider-model { margin-top: 16px; padding-top: 14px; border-top: 1px solid #e4e9e2; }
+.catalog-status { margin: 10px 0 0; color: #7e8b85; font-size: 10px; line-height: 1.5; }
+.provider-ok { margin: 8px 0 0; color: #3d6b58; font-size: 10px; }
+.provider-error { margin: 8px 0 0; padding: 8px 10px; color: #934126; background: #fbe9e3; border: 1px solid #efc2b3; border-radius: 7px; font-size: 10px; line-height: 1.45; }
+.provider-hint { margin: 6px 0 0; color: #8a958f; font-size: 10px; line-height: 1.45; }
+
+@media (max-width: 760px) {
+    .provider-sheet { padding: 18px; }
+    .provider-layout { grid-template-columns: 1fr; gap: 16px; }
+    .provider-list { padding: 0 0 14px; border-right: 0; border-bottom: 1px solid #e4e9e2; }
+    .provider-grid, .model-grid { grid-template-columns: 1fr; }
+}
+
+/* Inline model switch above the composer (the frequent action lives here, connections in the sheet). */
+.assistant-model-bar { margin: 0 13px 10px; padding: 9px 10px; border: 1px solid #d8e1d9; border-radius: 10px; background: #fffefa; }
+.assistant-model-label { display: block; margin-bottom: 5px; color: #89948f; font-size: 9px; letter-spacing: .07em; text-transform: uppercase; font-weight: 700; }
+.assistant-model-bar select { width: 100%; padding: 7px 8px; font-size: 11px; border: 1px solid #d6dcd5; border-radius: 7px; background: #fffefa; }
+
+/* ChatGPT account: sign-in lives next to the connection list, never inside the credential form. */
+.provider-codex { margin-top: 14px; padding-top: 12px; border-top: 1px solid #eceee7; }
+.provider-codex .provider-hint { margin: 4px 0 8px; }
+.provider-codex-start { width: 100%; }
+.provider-codex-actions { display: flex; gap: 7px; margin-top: 8px; }
+.provider-codex-actions button { flex: 1; padding: 7px 8px; font-size: 10px; }
+.provider-codex-cancel { margin-top: 8px; }
