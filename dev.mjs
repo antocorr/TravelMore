@@ -1,11 +1,40 @@
 import { spawn } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
+import { existsSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { createInterface } from 'node:readline'
 import { createServer as createPortProbe } from 'node:net'
 import { fileURLToPath } from 'node:url'
-import { createServer } from 'vite'
 
+const MIN_NODE = '22.19.0'
 const root = fileURLToPath(new URL('.', import.meta.url))
+
+/** Explain a missing prerequisite instead of throwing a bare ESM resolution stack. */
+function preflight() {
+    const [major, minor] = process.versions.node.split('.').map(Number)
+    const [needMajor, needMinor] = MIN_NODE.split('.').map(Number)
+    if (major < needMajor || (major === needMajor && minor < needMinor)) {
+        console.error(`[dev] Node.js ${process.versions.node} is too old. TravelMore needs ${MIN_NODE} or newer (the Pi runtime requirement).`)
+        console.error('[dev] Install a newer Node.js from https://nodejs.org/ and run this command again.')
+        process.exit(1)
+    }
+    const require = createRequire(import.meta.url)
+    let vite = false
+    try { require.resolve('vite'); vite = true } catch { /* reported below */ }
+    if (!vite) {
+        console.error('[dev] Dependencies are not installed, so Vite cannot be loaded.')
+        console.error('[dev] Run `npm install` in this directory first, then `npm run dev` again.')
+        console.error('[dev] Use a normal install: `npm ci --omit=dev` and `npm install --production` skip Vite, tsx and the other development tools.')
+        if (!existsSync(`${root}node_modules`)) console.error(`[dev] ${root}node_modules does not exist yet.`)
+        process.exit(1)
+    }
+    try { require.resolve('tsx/cli') } catch {
+        console.error('[dev] The `tsx` runner is missing. Run `npm install` (without `--omit=dev`) in this directory.')
+        process.exit(1)
+    }
+}
+preflight()
+const { createServer } = await import('vite')
 const clientRoot = fileURLToPath(new URL('./client/', import.meta.url))
 const serverRoot = fileURLToPath(new URL('./server/', import.meta.url))
 // Only this process can attest that a proxied request originated on this computer.

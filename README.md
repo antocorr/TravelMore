@@ -99,6 +99,16 @@ TRAVELMORE_DATA_DIR=/tmp/travelmore-demo npm run dev
 The default data directory is `~/.travelmore/`. Records, credentials, media and caches stay outside the
 repository. Do not run multiple backends against the same directory. [Configuration options →](#configuration)
 
+### Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| `Cannot find package 'vite'` when running `npm run dev` | Dependencies are missing. Run `npm install` in the repository root; `--omit=dev` and `npm install --production` skip Vite and tsx. |
+| `Node.js … is too old` | Install Node.js 22.19 or newer; `node --version` should report 22.19+ (23.x/24.x are fine). |
+| Port already in use | The launcher picks free ports itself; a failure here usually means another copy is already running. |
+
+`dev.mjs` checks these before starting and prints the fix instead of a stack trace.
+
 ### A prompt to start with
 
 > Plan a trip to Japan from May 10 to 23, 2027, for two adults.
