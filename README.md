@@ -76,13 +76,23 @@ flight prices were fabricated. [Photo credits and licenses →](#screenshot-cred
 
 **Requirements:** Node.js **22.19+**, npm and Git. Chrome is needed only for flight scans.
 
+**1. Install the dependencies** — once, in the repository root (the folder with `package.json`,
+`client/` and `server/`). This is an npm workspace: do not install inside `client/` or `server/`, and
+do not use `--omit=dev` or `npm install --production`, which skip Vite and tsx.
+
 ```bash
 npm install
+```
+
+**2. Start the app:**
+
+```bash
 npm run dev
 ```
 
-Open the URL printed as `[dev] client ready on …`. Ports are assigned automatically, and the launcher
-connects Vite to the backend. Press Ctrl+C to stop both.
+Without step 1 the launcher stops with `Cannot find package 'vite'`. Once it starts, open the URL
+printed as `[dev] client ready on …`. Ports are assigned automatically, and the launcher connects
+Vite to the backend. Press Ctrl+C to stop both.
 
 1. Create a trip with **＋ New trip**.
 2. Open **⚙** in the assistant and save your provider connection.
